@@ -62,7 +62,7 @@
     <Compile Include="DistributedTransactionSqlTest.cs" />
     <Compile Include="SqlTest.cs" />
     <Compile Include="LocalTransactionSqlTest.cs" />
-    <Compile Include="SqlDatabaseSetup.cs" />
+    <Compile Include="SqlDatabaseUtils.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

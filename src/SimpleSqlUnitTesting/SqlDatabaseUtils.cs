@@ -1,41 +1,18 @@
 ﻿using System;
 using System.Data.SqlClient;
 using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
-using Microsoft.Data.Tools.Schema.Sql.UnitTesting;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace SimpleSqlUnitTesting
 {
-    [TestClass]
-    public class SqlDatabaseSetup
+    public class SqlDatabaseUtils
     {
-        [AssemblyInitialize]
-        public static void InitializeAssembly(TestContext ctx)
-        {
-            CreateDatabase("Frontiers_DB");
-            CreateDatabase("Impact_DB_UnitTesting");
-            DeployImpactTestSchema();
-            ExecuteTestDbScripts("01_FrontiersDB", "Frontiers_DB");
-            ExecuteTestDbScripts("02_ImpactDB", "Impact_DB_UnitTesting");
-            ExecuteSqlWithoutTransaction("RECONFIGURE", "Impact_DB_UnitTesting");
-        }
-
-        private static void DeployImpactTestSchema()
-        {
-            Debug.WriteLine("Deploying Database Project...");
-            SqlDatabaseTestClass.TestService.DeployDatabaseProject();
-            // This can only work if you have VS Ultimate
-            // SqlDatabaseTestClass.TestService.GenerateData();
-        }
-
-        private static void CreateDatabase(string databaseName)
+        public static void CreateDatabase(string databaseName)
         {
             Console.WriteLine("Creating {0} Database...", databaseName);
-            using (var conn = new SqlConnection(CreateConnectionStringForDatabase("Master")))
+            using (var conn = new SqlConnection(CreateConnectionStringForLocalDb("Master")))
             {
                 conn.Open();
 
@@ -62,15 +39,13 @@ namespace SimpleSqlUnitTesting
             }
         }
 
-        private static string CreateConnectionStringForDatabase(string databaseName)
+        private static string CreateConnectionStringForLocalDb(string databaseName)
         {
-            return string.Format(CultureInfo.InvariantCulture,
-                @"Data Source=(LocalDb)\Projects;Initial Catalog={0};Integrated Security=True",
-                databaseName);
+            return $@"Data Source=(LocalDb)\Projects;Initial Catalog={databaseName};Integrated Security=True";
 
         }
 
-        private static void ExecuteTestDbScripts(string subfolder, string databaseName)
+        public static void ExecuteTestDbScripts(string subfolder, string databaseName)
         {
             string directory = Path.Combine(Directory.GetCurrentDirectory(), "Deployment", subfolder);
 
@@ -91,7 +66,7 @@ namespace SimpleSqlUnitTesting
 
         private static readonly Regex GoRegex = new Regex(@"\bGO\b", RegexOptions.Compiled);
 
-        private static void ExecuteSqlFile(FileInfo sqlFile, string databaseName)
+        public static void ExecuteSqlFile(FileInfo sqlFile, string databaseName)
         {
             Console.WriteLine("Executing {0}", sqlFile);
             string sql = File.ReadAllText(sqlFile.FullName);
@@ -102,7 +77,7 @@ namespace SimpleSqlUnitTesting
         {
             string[] goSplitSql = GoRegex.Split(sql).Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
 
-            using (var cnx = new SqlConnection(CreateConnectionStringForDatabase(databaseName)))
+            using (var cnx = new SqlConnection(CreateConnectionStringForLocalDb(databaseName)))
             {
                 cnx.Open();
                 using (var trn = cnx.BeginTransaction("InitSqlPart"))
@@ -139,11 +114,11 @@ namespace SimpleSqlUnitTesting
             }
         }
 
-        private static void ExecuteSqlWithoutTransaction(string sql, string databaseName)
+        public static void ExecuteSqlWithoutTransaction(string sql, string databaseName)
         {
             Console.WriteLine("Executing {0}", sql);
 
-            using (var cnx = new SqlConnection(CreateConnectionStringForDatabase(databaseName)))
+            using (var cnx = new SqlConnection(CreateConnectionStringForLocalDb(databaseName)))
             {
                 cnx.Open();
                 try
